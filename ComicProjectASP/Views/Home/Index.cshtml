@@ -1,0 +1,196 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model ComicProjectASP.Models.ProductViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (SignInManager.IsSignedIn(User))
+{
+    if (User.IsInRole("Admin"))
+    {
+        <h1>Hi Admin</h1>
+    }
+    <div>
+        <select class="form-select" aria-label="Default select example">
+            <option selected>Choose</option>
+            <option value="1">Books</option>
+            <option value="2">Toys</option>
+            <option value="3">Games</option>
+        </select>
+    </div>
+    <div class="col-12">
+        <label class="visually-hidden" for="searchInput">Search by product</label>
+        <div class="input-group">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by name">
+            <button type="submit" class="btn btn-primary" id="searchButton">Search</button>
+        </div>
+    
+    </div>
+   
+        
+    
+
+    <div class="w-100 d-flex flex-wrap mt-3">
+        @foreach (var product in Model.Products)
+        {
+
+
+            <div class="card mx-2 mb-4" style="width: 15rem; ">
+                <img src="@Url.Content($"~/images/{product.Images}")" class="card-img-top" alt="Product Image">
+
+                <div class="card-body">
+                    <h5 class="card-title">@product.Name</h5>
+                    <p class="card-text">
+                        Brand: @product.Brand?.Brand_Name<br>
+                        Category: @product.Category?.CategoryName<br>
+
+                        Price: @product.Price?.ToString("C")"
+                    </p>
+
+                    <button type="button" class="btn btn-primary view-product"
+                            data-bs-toggle="modal"
+                            data-bs-target="#productModal"
+                            data-product-id="@product.Id"
+                            data-product-image="@Url.Content($"~/images/{product.Images}")"
+                            data-product-name="@product.Name"
+                            data-product-brand="@product.Brand?.Brand_Name"
+                            data-product-category="@product.Category?.CategoryName"
+                            data-product-price="@product.Price?.ToString("C")">
+                        View Product
+                    </button>
+                    <button type="button" class="btn btn-success add-to-cart"
+                            data-product-id="@product.Id" data-quantity="1">
+                        Add to Cart
+                    </button>
+
+                </div>
+            </div>
+        }
+    </div>
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalProductImage" src="" class="card-img-top" alt="Product Image">
+                    <p id="modalProductName"></p>
+                    <p id="modalProductBrand"></p>
+                    <p id="modalProductCategory"></p>
+                    <p id="modalProductPrice"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success add-to-cart" id="modalAddToCart" data-product-id="" data-quantity="1">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    // Content for non-authenticated users
+    <div class="jumbotron">
+        <h1>Welcome to our store!</h1>
+        <p>Discover our collection of amazing products register or login now!</p>
+        <a href="https://localhost:7086/Identity/Account/Login" class="btn btn-primary">Login</a>
+        <a href="https://localhost:7086/Identity/Account/Register" class="btn btn-secondary">Register</a>
+    </div>
+
+    <div id="productCarousel" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+            @for (int i = 0; i < Model.Products.Count(); i++)
+            {
+                <li data-target="#productCarousel" data-slide-to="@i" class="@(i == 0 ? "active" : "")"></li>
+            }
+        </ol>
+
+        <div class="carousel-inner">
+            @for (int i = 0; i < Model.Products.Count(); i++)
+            {
+                <div class="carousel-item @(i == 0 ? "active" : "")">
+                    <img src="@Url.Content($"~/images/{Model.Products.ElementAt(i).Images}")" class="d-block w-100" alt="...">
+                </div>
+            }
+        </div>
+
+        <a class="carousel-control-prev" href="#productCarousel" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#productCarousel" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    </div>
+
+}
+
+
+
+
+@section Scripts {
+    <script>
+        $('#searchButton').click(function (e) {
+            e.preventDefault();
+            var searchQuery = $('#searchInput').val().trim();
+            var category = $('.form-select').val();
+            window.location.href = '@Url.Action("Index", "Home")' + '?searchQuery=' + encodeURIComponent(searchQuery) + '&category=' + encodeURIComponent(category);
+        });
+    </script>
+    <script>
+        $('#searchButton').click(function (e) {
+            e.preventDefault();
+            var searchQuery = $('#searchInput').val();
+            var category = $('.form-select').val();
+            window.location.href = '@Url.Action("Index", "Home")' + '?searchQuery=' + encodeURIComponent(searchQuery) + '&category=' + encodeURIComponent(category);
+        });
+    </script>
+<script>
+    $(document).ready(function () {
+        // Bind click event to both main page and modal 'Add to Cart' buttons
+        $('body').on('click', '.add-to-cart', function () {
+            var productId = $(this).data('product-id');
+            var quantity = $(this).data('quantity');
+            $.ajax({
+                    url: '@Url.Action("AddToCart", "Cart")', // Adjust the controller and action names as necessary
+                type: 'POST',
+                data: { productId: productId, quantity: quantity },
+                success: function (response) {
+                    alert('Item added to cart!');
+                    // Optionally, update the cart UI here
+                },
+                error: function (xhr, status, error) {
+                    alert('Error adding item to cart.');
+                }
+            });
+        });
+
+        $('.view-product').click(function () {
+            var productId = $(this).data('product-id');
+            var productImage = $(this).data('product-image');
+            var productName = $(this).data('product-name');
+            var productBrand = $(this).data('product-brand');
+            var productCategory = $(this).data('product-category');
+            var productPrice = $(this).data('product-price');
+
+            // Update modal content
+            $('#modalProductImage').attr('src', productImage).attr('alt', productName);
+            $('#modalProductName').text(productName);
+            $('#modalProductBrand').text(productBrand);
+            $('#modalProductCategory').text(productCategory);
+            $('#modalProductPrice').text(productPrice);
+
+            // Update the Add to Cart button in the modal
+            $('#modalAddToCart').data('product-id', productId); // Attach the product ID to the button
+        });
+    });
+</script>}
+
+
